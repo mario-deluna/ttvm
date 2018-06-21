@@ -1,0 +1,10 @@
+# CMake & Xcode
+CMakeFiles/*
+CMakeScripts/*
+bin/*
+cmake_install.cmake
+ttvm.build/*
+ttvm.xcodeproj/*
+ttvm-server.build/*
+ttvm-server.xcodeproj/*
+CMakeCache.txt

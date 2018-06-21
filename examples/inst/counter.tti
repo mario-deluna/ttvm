@@ -1,0 +1,17 @@
+@main:
+    CI32            0x54
+    PRINT
+    CI32            0x54
+    PRINT
+    CI32            0x0A
+    PRINT
+    CI32            1
+@add:
+    CI32            1
+    ADD_I32
+    DUP
+    PRINTI
+    CI32            0x0A
+    PRINT
+    JUMP            @add
+    HALT
