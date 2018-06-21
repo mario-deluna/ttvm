@@ -62,14 +62,14 @@ void TTVM::execute()
             /**
              * Push a constant int 32
              */
-            case TTVMI_CI32:
+            case TTVMI_CINT:
                 TTVMPUSH(TTVMNINST);
             break;
                 
             /**
              * Add two ints 32
              */
-            case TTVMI_ADD_I32:
+            case TTVMI_ADD_INT:
                 i1 = TTVMPOP;
                 i2 = TTVMPOP;
                 TTVMPUSH(i1 + i2);

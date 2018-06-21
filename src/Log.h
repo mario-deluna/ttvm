@@ -17,8 +17,8 @@
 
 #include <iostream>
 
-#define WARN(x) (std::cerr << "[WARNING] -> " << x << std::endl);
-#define ERR(x) (std::cerr << "[ERROR] -> " << x << std::endl);
+#define WARN(x) (std::cerr << "[WARNING] " << x << std::endl);
+#define ERR(x) (std::cerr << "[ERROR] " << x << std::endl);
 
 #ifdef _DEBUG
 #define LOG(x) (std::cout << "" << x << std::endl);

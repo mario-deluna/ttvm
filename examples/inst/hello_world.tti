@@ -1,0 +1,10 @@
+@main
+  .CINT         0x54 
+  .PRINT
+  .CINT         0x54
+  .PRINT
+  .CINT         0x0A
+  .PRINT
+  .CINT         42
+  .PRINT
+  .HALT

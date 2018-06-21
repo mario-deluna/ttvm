@@ -15,9 +15,9 @@ enum {
     TTVMI_JUMP = 3,         // Jump around
     TTVMI_DUP = 4,          // duplicate
     
-    TTVMI_CI32 = 10,        // set int 32
+    TTVMI_CINT = 10,        // set int 32
     
-    TTVMI_ADD_I32 = 20       // add to numbers
+    TTVMI_ADD_INT = 20       // add to numbers
 };
 
 #endif /* Opcode_hpp */
