@@ -42,7 +42,22 @@ void compile(const std::string &filename, const std::string &output)
         
         compiler.compile();
         
-        int *i = compiler.get_instructions().data();
+        std::ofstream fout;
+        fout.open(output, std::ios::binary | std::ios::out);
+        
+        std::vector<int> inst = compiler.get_instructions();
+        
+        fout.write(reinterpret_cast<const char *>(&inst[0]), inst.size() * sizeof(float));
+        
+        fout.close();
+        
+//        Program *program = new Program(compiler.get_instructions().data(), 0);
+//        TTVM *vm = new TTVM(program);
+//
+//        vm->execute();
+//
+//        delete vm;
+//        delete program;
     }
     // hmmmm
     else

@@ -16,7 +16,14 @@
 
 struct Token
 {
+    const int type;
+    const std::string content;
     
+    const unsigned int line;
+    
+    inline Token(const int type, const std::string content, const unsigned int line) :
+        type(type), content(content), line(line)
+    {}
 };
 
 typedef std::vector<Token> TokenCollection;
