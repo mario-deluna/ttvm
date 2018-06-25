@@ -13,7 +13,33 @@
 #include "Compiler.h"
 #include "VM.h"
 
-void compile(const std::string &filename, const std::string &output)
+void execute(const std::string &filename)
+{
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    
+    if (!file.is_open()) {
+        ERR("Could not open executable file: " << filename);
+    }
+    
+    file.seekg(0, std::ios::end);
+    auto length = file.tellg();
+    file.seekg(0);
+    
+    std::vector<int> instructions(length / sizeof(int), 0);
+    file.read(reinterpret_cast<char*>(instructions.data()), instructions.size() * sizeof(int));
+    
+    Program *program = new Program(instructions.data(), 0);
+    TTVM *vm = new TTVM(program);
+    
+    vm->execute();
+    
+    delete vm;
+    delete program;
+    
+    printf("DONE\n");
+}
+
+void compile(const std::string &filename, const std::string &output, const bool run = false)
 {
     // read the file into memory
     std::ifstream input_stream(filename);
@@ -48,54 +74,19 @@ void compile(const std::string &filename, const std::string &output)
         std::vector<int> inst = compiler.get_instructions();
         
         fout.write(reinterpret_cast<const char *>(&inst[0]), inst.size() * sizeof(float));
-        
         fout.close();
-        
-//        Program *program = new Program(compiler.get_instructions().data(), 0);
-//        TTVM *vm = new TTVM(program);
-//
-//        vm->execute();
-//
-//        delete vm;
-//        delete program;
     }
     // hmmmm
     else
     {
         ERR("Unknown file given, double check the file extension.");
     }
+    
+    // run afterwards
+    if (run) execute(output);
 }
 
-void execute()
-{
-    int i[] = {
-        TTVMI_CINT, 0x54,
-        TTVMI_PRINT,
-        TTVMI_CINT, 0x54,
-        TTVMI_PRINT,
-        TTVMI_CINT, 0x0A,
-        TTVMI_PRINT,
-        TTVMI_CINT, 1,
-        TTVMI_CINT, 1,
-        TTVMI_ADD_INT,
-        TTVMI_DUP,
-        TTVMI_PRINTI,
-        TTVMI_CINT, 0x0A,
-        TTVMI_PRINT,
-        TTVMI_JUMP, 11,
-        TTVMI_HALT
-    };
-    
-    Program *program = new Program(i, 0);
-    TTVM *vm = new TTVM(program);
-    
-    vm->execute();
-    
-    delete vm;
-    delete program;
-    
-    printf("DONE\n");
-}
+
 
 /**
  * .....
@@ -113,10 +104,13 @@ int main(int argc, char *argv[])
             std::string filename(argv[2]);
             std::string output(argv[3]);
             
-            compile(filename, output);
+            compile(filename, output, true);
             
         } else if (strcmp(argv[1], "exec") == 0) {
-            execute();
+            
+            std::string filename(argv[2]);
+            
+            execute(filename);
         } else {
             ERR("Invalid method.");
         }
