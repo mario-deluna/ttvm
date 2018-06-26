@@ -28,7 +28,12 @@ void execute(const std::string &filename)
     std::vector<int> instructions(length / sizeof(int), 0);
     file.read(reinterpret_cast<char*>(instructions.data()), instructions.size() * sizeof(int));
     
-    Program *program = new Program(instructions.data(), 0);
+    // the first instruction is the entry point / main function
+    int entry_point = instructions[0];
+    instructions.erase(instructions.begin(), instructions.begin() + 1);
+    
+    // create the program and execute it
+    Program *program = new Program(instructions.data(), entry_point);
     TTVM *vm = new TTVM(program);
     
     vm->execute();
@@ -66,14 +71,21 @@ void compile(const std::string &filename, const std::string &output, const bool 
     {
         InstructionTextCompiler compiler = InstructionTextCompiler(input);
         
-        compiler.compile();
+        if (!compiler.compile()) {
+            ERR("Could not compile the program: " << compiler.get_last_error()); return;
+        }
         
         std::ofstream fout;
         fout.open(output, std::ios::binary | std::ios::out);
         
         std::vector<int> inst = compiler.get_instructions();
         
-        fout.write(reinterpret_cast<const char *>(&inst[0]), inst.size() * sizeof(float));
+        // write the entry point
+        int entry_point = compiler.get_program_main_pointer();
+        fout.write(reinterpret_cast<const char *>(&entry_point), sizeof(entry_point));
+        
+        // write the instructions
+        fout.write(reinterpret_cast<const char *>(&inst[0]), inst.size() * sizeof(int));
         fout.close();
     }
     // hmmmm

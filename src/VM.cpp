@@ -9,6 +9,8 @@
 #include "Opcodes.h"
 #include "Log.h"
 
+#include <unistd.h>
+
 #define TTVMPUSH(v) _stack[++_stack_pointer] = v
 #define TTVMCURR _stack[_stack_pointer]
 #define TTVMPOP _stack[_stack_pointer--]
@@ -50,11 +52,18 @@ void TTVM::execute()
             break;
                 
             /**
-             * Jumping
+             * Duplicate
              */
             case TTVMI_DUP:
                 i1 = TTVMCURR;
                 TTVMPUSH(i1);
+            break;
+                
+            /**
+             * Sleep
+             */
+            case TTVMI_USLEEP:
+                usleep(TTVMPOP);
             break;
                 
             /**

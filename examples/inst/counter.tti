@@ -1,17 +1,9 @@
 @main
-    CINT            0x54
-    PRINT
-    CINT            0x54
-    PRINT
-    CINT            0x0A
-    PRINT
-    CINT            1
+  .CINT         0
 @add
-    CINT            1
-    ADD_I32
-    DUP
-    PRINTI
-    CINT            0x0A
-    PRINT
-    JUMP            @add
-    HALT
+  .CINT         1
+  .ADD_INT
+  .DUP          .PRINTI             // print the added value
+  .CINT         0x0A .PRINT         // print a linebreak
+  .CINT         1000000 .USLEEP     // wait for a second
+  .JUMP         @add                // repeat

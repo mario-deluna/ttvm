@@ -14,6 +14,7 @@ enum {
     TTVMI_PRINTI = 2,       // print the int
     TTVMI_JUMP = 3,         // Jump around
     TTVMI_DUP = 4,          // duplicate
+    TTVMI_USLEEP = 5,       // sleep for microseconds
     
     TTVMI_CINT = 10,        // set int 32
     
