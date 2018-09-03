@@ -1,0 +1,14 @@
+@done 
+	.HALT
+
+#store($address, $value)
+	.CINT 0xFF
+#end
+
+@main
+	.CINT 0x00 .CINT 0x41 .STORE
+	.CINT 0x00 .LOAD
+	.PRINT
+	.CINT 0x00 .LOAD
+	.PRINT
+	.JUMP @done

@@ -7,7 +7,6 @@
 
 #include "Compiler.h"
 #include "Opcodes.h"
-#include "Lexer.hpp"
 
 #define PROGRAM_MAIN_LABEL "@main"
 
@@ -17,7 +16,17 @@ enum {
     TOKEN_HEX = 2,
     TOKEN_INT = 3,
     
+    TOKEN_OPEN = 100,
+    TOKEN_CLOSE = 101,
+    TOKEN_COMMA = 102,
+    
+    TOKEN_MACRO = 205,
+    TOKEN_MACRO_END = 204,
+    TOKEN_VARIABLE = 250,
+    
     TOKEN_COMMENT = 500,
+    
+    TOKEN_UNKNOWN = 1000,
 };
 
 void InstructionTextCompiler::add_instruction(int instruction)
@@ -43,24 +52,35 @@ int InstructionTextCompiler::get_program_main_pointer()
 
 bool InstructionTextCompiler::compile()
 {
+    _macros.clear();
     _label_map.clear();
     _instructions.clear();
     _instruction_p = 0;
+    _token_itp = 0;
     
     Lexer lexer({
         {TOKEN_LABEL, "^@[a-zA-z0-9]+", },
         {TOKEN_INSTRUCTION, "^\\.[A-z0-9_]+"},
         {TOKEN_HEX, "^0x[0-9A-Z]+"},
         {TOKEN_INT, "^[+-]?[0-9]+"},
-        {TOKEN_COMMENT, "^\\/\\/.*"}
+        {TOKEN_OPEN, "^\\("},
+        {TOKEN_CLOSE, "^\\)"},
+        {TOKEN_COMMA, "^\\,"},
+        {TOKEN_MACRO_END, "^#end"},
+        {TOKEN_MACRO, "^#[a-zA-z0-9]+"},
+        {TOKEN_VARIABLE, "^\\$[a-zA-z0-9]+"},
+        {TOKEN_COMMENT, "^\\/\\/.*"},
+        {TOKEN_UNKNOWN, "^.*"},
     });
     
-    TokenCollection tokens = lexer.tokenize(_text);
+    _tokens = lexer.tokenize(_text);
     
     std::vector<std::string> label_strings;
     
-    for (auto &token : tokens)
+    while(_token_itp < _tokens.size())
     {
+        auto token = _tokens[_token_itp];
+        
         switch (token.type) {
             case TOKEN_INSTRUCTION:
                 if (token.content == ".CINT") {
@@ -79,6 +99,10 @@ bool InstructionTextCompiler::compile()
                     add_instruction(TTVMI_USLEEP);
                 } else if (token.content == ".ADD_INT") {
                     add_instruction(TTVMI_ADD_INT);
+                } else if (token.content == ".STORE") {
+                    add_instruction(TTVMI_STORE);
+                } else if (token.content == ".LOAD") {
+                    add_instruction(TTVMI_LOAD);
                 } else {
                     _last_error = "Invalid instruction given '" + token.content + "' at line " + std::to_string(token.line + 1);
                     return false;
@@ -103,7 +127,15 @@ bool InstructionTextCompiler::compile()
                 }
                 
                 break;
+            case TOKEN_MACRO:
                 
+                if (!parse_macro(token)) {
+                    _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
+                    return false;
+                }
+                
+                break;
+            
             case TOKEN_COMMENT:
                 // its a comment ..
                 break;
@@ -112,6 +144,8 @@ bool InstructionTextCompiler::compile()
                 return false;
                 break;
         }
+        
+        _token_itp++;
     }
     
     // insert the correct pointer positions at all jump instructions
@@ -134,6 +168,49 @@ bool InstructionTextCompiler::compile()
     if (!has_program_pointer(PROGRAM_MAIN_LABEL)) {
         _last_error = "The program seems not to have a main entry point.";
         return false;
+    }
+    
+    return true;
+}
+
+bool InstructionTextCompiler::parse_macro(Token token)
+{
+    auto name = token.content;
+    
+    // new macro definition?
+    if (_macros.find(name) == _macros.end())
+    {
+        int i = _token_itp;
+        int endpos = -1;
+        
+        TokenCollection macro_tokens;
+        
+        while(i < _tokens.size() || endpos > -1)
+        {
+            macro_tokens.push_back(_tokens[i]);
+            
+            if (_tokens[i].type == TOKEN_MACRO_END) {
+                endpos = i; break;
+            }
+            
+            i++;
+        }
+        
+        // no end node?
+        if (endpos == -1) {
+            _last_error = "Did you forgot to close a macro definition? Because we can't find the end.";
+            return false;
+        }
+        
+        // remove the macro tokens from the main set
+        _tokens.erase(_tokens.begin(), _tokens.end());
+        //_tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + macro_tokens.size());
+        
+    }
+    // macro call
+    else
+    {
+        
     }
     
     return true;

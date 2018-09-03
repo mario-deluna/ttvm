@@ -1,0 +1,32 @@
+@done 
+	.HALT
+
+@main
+	//.CINT_ARR 	  3 0x48 0x48 0x48 
+	//.STORE_ARR	  3 // store and pop 3 items from the stack, pushes address of first item to stack
+	.CINT         0x48 .STORE // store the first char
+	.CINT         0x48 .STORE .POP
+	.CINT         0x48 .STORE .POP
+
+	.CINT 		  3 // push the length to the stack
+
+	.RSTORE		  :r0 // store the length
+	.RSTORE		  :r1 // store the starting address
+
+@print
+	
+	.RLOAD 		  :r0
+	.JUMPZ 		  @done
+	.RLOAD		  :r1
+	.LOAD
+	.PRINT
+	.RLOAD 		  :r0
+	.CINT 		  1
+	.SUB_INT
+	.RSTORE	      :r0
+	.RLOAD 		  :r1
+	.CINT 		  1
+	.ADD_INT
+	.RSTORE	      :r1
+	.JUMP 		  @print
+

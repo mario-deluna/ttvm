@@ -15,6 +15,7 @@
 #define TTVMCURR _stack[_stack_pointer]
 #define TTVMPOP _stack[_stack_pointer--]
 #define TTVMNINST _instructions[_instruction_pointer++]
+#define CONTROL_SP assert(_stack_pointer >= 0)
 
 void TTVM::execute()
 {
@@ -33,6 +34,7 @@ void TTVM::execute()
              * Print
              */
             case TTVMI_PRINT:
+                CONTROL_SP;
                 printf("%c", TTVMPOP);
             break;
                 
@@ -80,6 +82,23 @@ void TTVM::execute()
                 i1 = TTVMPOP;
                 i2 = TTVMPOP;
                 TTVMPUSH(i1 + i2);
+            break;
+                
+            /**
+             * Stores a value
+             */
+            case TTVMI_STORE:
+                i1 = TTVMPOP; // value
+                i2 = TTVMPOP; // address
+                _memory[i2] = i1;
+            break;
+                
+            /**
+             * Loads a value
+             */
+            case TTVMI_LOAD:
+                i1 = TTVMPOP; // address
+                TTVMPUSH(_memory[i1]);
             break;
                 
             /**

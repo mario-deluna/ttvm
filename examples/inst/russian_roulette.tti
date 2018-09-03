@@ -1,0 +1,17 @@
+%linebreak:
+	.CINT         0x0A .PRINT		
+end
+
+%print_s
+
+end
+
+@main
+	.CINT         0x48
+	.CINT         0x48
+	.CINT         0x48
+	.CINT 		  3
+	.MVIP 		  
+
+@done
+	%linebreak

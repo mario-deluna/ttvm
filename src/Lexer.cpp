@@ -33,6 +33,11 @@ TokenCollection Lexer::tokenize(const std::string &code)
             p++; continue;
         }
         
+        // tap?
+        if (remaining[0] == '\t') {
+            p++; continue;
+        }
+        
         for (auto const& type : _token_types)
         {
             std::regex pattern(type.second);

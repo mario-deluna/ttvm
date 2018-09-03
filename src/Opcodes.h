@@ -18,7 +18,10 @@ enum {
     
     TTVMI_CINT = 10,        // set int 32
     
-    TTVMI_ADD_INT = 20       // add to numbers
+    TTVMI_ADD_INT = 20,     // add to numbers
+    
+    TTVMI_STORE = 30,        // store something in memory
+    TTVMI_LOAD = 31          // load something in memory
 };
 
 #endif /* Opcode_hpp */
