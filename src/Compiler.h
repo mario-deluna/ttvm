@@ -71,7 +71,8 @@ class InstructionTextCompiler
     bool parse_macro_definition(Token token);
     bool parse_macro_call(Token token);
     bool is_at_macro_definition(Token token);
-    TokenCollectionReturn parse_scope();
+    TokenCollectionReturn parse_argument_tokens();
+    void remove_current_token();
     
     void add_instruction(const int instruction);
     

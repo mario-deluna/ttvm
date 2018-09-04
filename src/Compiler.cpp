@@ -220,6 +220,11 @@ bool InstructionTextCompiler::compile()
     return true;
 }
 
+void InstructionTextCompiler::remove_current_token()
+{
+    _tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + 1);
+}
+
 bool InstructionTextCompiler::is_at_macro_definition(Token token)
 {
     auto name = token.content;
@@ -244,6 +249,31 @@ bool InstructionTextCompiler::parse_macro_definition(Token token)
 {
     if (is_at_macro_definition(token))
     {
+        // remove the macro name token
+        remove_current_token();
+        
+        // parse the arguments
+        auto arguments = parse_argument_tokens();
+        if (!arguments.success) {
+            return false;
+        }
+        
+        auto macro_args = std::vector<TokenArgument>();
+        for (auto &token : arguments.tokens)
+        {
+            // skip commas
+            if (token.type == TOKEN_COMMA) {
+                continue;
+            }
+            
+            if (token.type != TOKEN_VARIABLE) {
+                _last_error = "Token definition arguments can only be variables at line " + std::to_string(token.line + 1);
+                return false;
+            }
+            
+            macro_args.push_back(TokenArgument({token}));
+        }
+        
         auto name = token.content;
         
         int i = _token_itp;
@@ -273,11 +303,10 @@ bool InstructionTextCompiler::parse_macro_definition(Token token)
         _token_itp--;
         
         // remove the macro name and end
-        macro_tokens.erase(macro_tokens.begin(), macro_tokens.begin() + 1);
         macro_tokens.erase(macro_tokens.end() - 1, macro_tokens.end());
         
         // add the macro tokens
-        _macros.insert(std::pair<std::string, TokenMacro>(name, TokenMacro({}, macro_tokens)));
+        _macros.insert(std::pair<std::string, TokenMacro>(name, TokenMacro(macro_args, macro_tokens)));
     }
     
     return true;
@@ -298,8 +327,16 @@ bool InstructionTextCompiler::parse_macro_call(Token token)
     return true;
 }
 
-TokenCollectionReturn InstructionTextCompiler::parse_scope()
+TokenCollectionReturn InstructionTextCompiler::parse_argument_tokens()
 {
+    if (_tokens[_token_itp].type != TOKEN_OPEN) {
+        _last_error = "Macro is missing the opening ( thingy at line " + std::to_string(_tokens[_token_itp].line + 1);
+        return TokenCollectionReturn(false, {});
+    }
+    
+    // remove the opening thingy
+    remove_current_token();
+    
     int i = _token_itp;
     int endpos = -1;
     
@@ -307,11 +344,11 @@ TokenCollectionReturn InstructionTextCompiler::parse_scope()
     
     while(i < _tokens.size() || endpos > -1)
     {
-        scope_tokens.push_back(_tokens[i]);
-        
         if (_tokens[i].type == TOKEN_CLOSE) {
             endpos = i; break;
         }
+        
+        scope_tokens.push_back(_tokens[i]);
         
         i++;
     }
@@ -324,6 +361,14 @@ TokenCollectionReturn InstructionTextCompiler::parse_scope()
     
     // remove the macro tokens from the main set
     _tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + scope_tokens.size());
+    
+    // remove the closing things
+    remove_current_token();
+    
+    // remove the assignment token if its there
+    if (_tokens[_token_itp].type == TOKEN_ASSIGN) {
+        remove_current_token();
+    }
     
     return TokenCollectionReturn(true, scope_tokens);
 }

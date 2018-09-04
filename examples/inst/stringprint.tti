@@ -1,8 +1,8 @@
 @done 
-	#hello()
+	#hello(0x42)
 	.HALT
 
-#hello():
+#hello($foo):
 	.CINT         0x48 .PRINT
 	.CINT         0x61 .PRINT
 	.CINT         0x6C .PRINT
@@ -13,7 +13,7 @@
 	.CINT         0x72 .PRINT
 	.CINT         0x75 .PRINT
 	.CINT         0x64 .PRINT
-	.CINT         0x69 .PRINT
+	.CINT         $foo .PRINT
 	.CINT         0x0A .PRINT
 #end
 
