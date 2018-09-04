@@ -104,7 +104,7 @@ bool InstructionTextCompiler::compile()
     
     _tokens = lexer.tokenize(_text);
     
-    // handle the macros first
+    // handle the macro definitions first
     while(_token_itp < _tokens.size())
     {
         auto token = _tokens[_token_itp];
@@ -120,6 +120,25 @@ bool InstructionTextCompiler::compile()
         _token_itp++;
     }
     
+    _token_itp = 0;
+    
+    // handle the macro definitions first
+    while(_token_itp < _tokens.size())
+    {
+        auto token = _tokens[_token_itp];
+        
+        if (token.type == TOKEN_MACRO)
+        {
+            if (!parse_macro_call(token)) {
+                _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
+                return false;
+            }
+        }
+        
+        _token_itp++;
+    }
+    
+    // Handle everything else
     _token_itp = 0;
     
     std::vector<std::string> label_strings;
@@ -171,14 +190,6 @@ bool InstructionTextCompiler::compile()
                 } else {
                     // otherwise this label marks a instruction pointer
                     _label_map[token.content] = _instruction_p;
-                }
-                
-                break;
-            case TOKEN_MACRO:
-                
-                if (!parse_macro_call(token)) {
-                    _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
-                    return false;
                 }
                 
                 break;
@@ -322,6 +333,79 @@ bool InstructionTextCompiler::parse_macro_call(Token token)
     if (_macros.find(token.content) == _macros.end()) {
         _last_error = "Unknown macro " + token.content + " at line " + std::to_string(token.line + 1);
         return false;
+    }
+    
+    // remove the macro name token
+    remove_current_token();
+    
+    // parse the arguments
+    auto arguments = parse_argument_tokens();
+    if (!arguments.success) {
+        return false;
+    }
+    
+    // parse the call arguments seperated by comma
+    auto call_args = std::vector<TokenArgument>();
+    int ai = 0;
+    auto call_arg = TokenArgument({});
+    while (ai < arguments.tokens.size())
+    {
+        auto t = arguments.tokens[ai];
+        
+        if (t.type == TOKEN_COMMA)
+        {
+            call_args.push_back(call_arg);
+            call_arg = TokenArgument({});
+        } else {
+            call_arg.tokens.push_back(t);
+        }
+        
+        ai++;
+    }
+    
+    call_args.push_back(call_arg);
+    
+    // get the macro tokens
+    
+    auto macro = _macros.find(token.content)->second;
+    auto macro_body = macro.tokens;
+    
+    int argi = 0;
+    for (auto &arg : macro.arguments)
+    {
+        auto varname = arg.tokens[0].content;
+        auto replacement = call_args[argi].tokens;
+        
+        int ti = 0;
+        for (auto &t : macro_body)
+        {
+            // match?
+            if (t.content == varname)
+            {
+                // remove the variable
+                macro_body.erase(macro_body.begin() + ti, macro_body.begin() + ti + 1);
+                
+                int ri = 0;
+                for (auto &r : replacement)
+                {
+                    macro_body.insert(macro_body.begin() + ti + ri, r);
+                    
+                    ri++;
+                }
+            }
+            
+            ti++;
+        }
+        
+        argi++;
+    }
+    
+    // insert the macro body
+    int macroboffset = 0;
+    for (auto &t : macro_body)
+    {
+        _tokens.insert(_tokens.begin() + _token_itp + macroboffset, t);
+        macroboffset++;
     }
     
     return true;
