@@ -10,6 +10,7 @@
 
 
 #define PROGRAM_MAIN_LABEL "@main"
+#define PROGRAM_MAX_MACRO_RECURSION 8
 
 enum {
     TOKEN_LABEL = 0,
@@ -104,43 +105,47 @@ bool InstructionTextCompiler::compile()
     
     _tokens = lexer.tokenize(_text);
     
-    // handle the macro definitions first
-    while(_token_itp < _tokens.size())
+    for(int r = 0; r < PROGRAM_MAX_MACRO_RECURSION; r++)
     {
-        auto token = _tokens[_token_itp];
-        
-        if (token.type == TOKEN_MACRO)
+        // handle the macro definitions first
+        while(_token_itp < _tokens.size())
         {
-            if (!parse_macro_definition(token)) {
-                _last_error = "Macro definition '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
-                return false;
+            auto token = _tokens[_token_itp];
+            
+            if (token.type == TOKEN_MACRO)
+            {
+                if (!parse_macro_definition(token)) {
+                    _last_error = "Macro definition '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
+                    return false;
+                }
             }
+            
+            _token_itp++;
         }
         
-        _token_itp++;
-    }
-    
-    _token_itp = 0;
-    
-    // handle the macro definitions first
-    while(_token_itp < _tokens.size())
-    {
-        auto token = _tokens[_token_itp];
+        _token_itp = 0;
         
-        if (token.type == TOKEN_MACRO)
+        // handle the macro definitions first
+        while(_token_itp < _tokens.size())
         {
-            if (!parse_macro_call(token)) {
-                _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
-                return false;
+            auto token = _tokens[_token_itp];
+            
+            if (token.type == TOKEN_MACRO)
+            {
+                if (!parse_macro_call(token)) {
+                    _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
+                    return false;
+                }
             }
+            
+            _token_itp++;
         }
         
-        _token_itp++;
+        
+        _token_itp = 0;
     }
     
     // Handle everything else
-    _token_itp = 0;
-    
     std::vector<std::string> label_strings;
     
     while(_token_itp < _tokens.size())

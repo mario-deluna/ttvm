@@ -1,30 +1,24 @@
 @done 
-	#hello(0x42)
 	.HALT
 
-#hello($foo):
-	.CINT         0x48 .PRINT
-	.CINT         0x61 .PRINT
-	.CINT         0x6C .PRINT
-	.CINT         0x6C .PRINT
-	.CINT         0x6F .PRINT
-	.CINT         0x20 .PRINT
-	.CINT         0x42 .PRINT
-	.CINT         0x72 .PRINT
-	.CINT         0x75 .PRINT
-	.CINT         0x64 .PRINT
-	.CINT         $foo .PRINT
-	.CINT         0x0A .PRINT
+#printc($char):
+	.CINT         $char .PRINT
+#end
+
+#printlb():
+	#printc(0x0A)
 #end
 
 #store($address, $value):
-	.CINT 0xFF
+	.CINT $address .CINT $value .STORE
+#end
+
+#load($address):
+	.CINT $address .LOAD
 #end
 
 @main
-	.CINT 0x00 .CINT 0x41 .STORE
-	.CINT 0x00 .LOAD
-	.PRINT
-	.CINT 0x00 .LOAD
-	.PRINT
+	#store(0x00, 0)
+	#load(0x00) .PRINTI
+	#printlb()
 	.JUMP @done
