@@ -8,3 +8,4 @@ ttvm.xcodeproj/*
 ttvm-server.build/*
 ttvm-server.xcodeproj/*
 CMakeCache.txt
+examples/compiled/*
