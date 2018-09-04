@@ -1,0 +1,44 @@
+#move($addressA, $addressB):
+	.CINT 0x2 
+	.CINT 0x0 .LOAD
+	.STORE // tmp = a
+#end
+
+// mem usage:
+//    0x0 = a
+//    0x1 = b
+//    0x2 = tmp
+@main
+	.CINT 0x0 .CINT 1 .STORE
+	.CINT 0x1 .CINT 0 .STORE
+	
+	.JUMP 		@add
+
+@add
+	.CINT 0x2 
+	.CINT 0x0 .LOAD
+	.STORE // tmp = a
+
+	.CINT 0x0 // get "a" address on stack
+	.CINT 0x0 .LOAD // get a 
+	.CINT 0x1 .LOAD // get b
+	.ADD_INT
+	.STORE // store a = a + b
+
+	.CINT 0x0 .LOAD
+	.PRINTI
+	.CINT         0x0A .PRINT
+
+	.CINT 0x1
+	.CINT 0x2 .LOAD
+	.STORE // b = temp
+
+	// DUMP
+	//.CINT 0x0A .PRINT
+	//.CINT 0x0 .LOAD .PRINTI .CINT 0x0A .PRINT
+	//.CINT 0x1 .LOAD .PRINTI .CINT 0x0A .PRINT
+	//.CINT 0x2 .LOAD .PRINTI .CINT 0x0A .PRINT
+	//.HALT
+
+	.CINT       1000000 .USLEEP     // wait for a second
+	.JUMP 		@add
