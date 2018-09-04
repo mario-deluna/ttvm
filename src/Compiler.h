@@ -11,9 +11,41 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include "Lexer.hpp"
 #include "Log.h"
+
+struct TokenCollectionReturn
+{
+    bool success;
+    TokenCollection tokens;
+    
+    TokenCollectionReturn(bool success, TokenCollection tokens) :
+        success(success), tokens(tokens)
+    {}
+};
+
+struct TokenArgument
+{
+    TokenCollection tokens;
+    
+    TokenArgument(TokenCollection tokens) :
+        tokens(tokens)
+    {}
+};
+
+struct TokenMacro
+{
+    typedef std::vector<TokenArgument> TokenArguments;
+    
+    TokenArguments arguments;
+    TokenCollection tokens;
+    
+    TokenMacro(TokenArguments arguments, TokenCollection tokens) :
+        arguments(arguments), tokens(tokens)
+    {}
+};
 
 class InstructionTextCompiler
 {
@@ -28,13 +60,18 @@ class InstructionTextCompiler
     // tokens
     TokenCollection _tokens;
     int _token_itp = 0;
+    Token token_at(int index);
+    int find_next_token_index(int type);
     
     // labels
     std::unordered_map<std::string, int> _label_map;
     
     // macros
-    std::unordered_map<std::string, TokenCollection> _macros;
-    bool parse_macro(Token token);
+    std::map<std::string, TokenMacro> _macros;
+    bool parse_macro_definition(Token token);
+    bool parse_macro_call(Token token);
+    bool is_at_macro_definition(Token token);
+    TokenCollectionReturn parse_scope();
     
     void add_instruction(const int instruction);
     

@@ -8,6 +8,7 @@
 #include "Compiler.h"
 #include "Opcodes.h"
 
+
 #define PROGRAM_MAIN_LABEL "@main"
 
 enum {
@@ -19,7 +20,8 @@ enum {
     TOKEN_OPEN = 100,
     TOKEN_CLOSE = 101,
     TOKEN_COMMA = 102,
-    
+    TOKEN_ASSIGN = 103,
+
     TOKEN_MACRO = 205,
     TOKEN_MACRO_END = 204,
     TOKEN_VARIABLE = 250,
@@ -50,6 +52,32 @@ int InstructionTextCompiler::get_program_main_pointer()
     return get_program_pointer(PROGRAM_MAIN_LABEL);
 }
 
+Token InstructionTextCompiler::token_at(int index)
+{
+    if (index < _tokens.size()) {
+        return _tokens[index];
+    }
+    
+    return Token(TOKEN_UNKNOWN, "", 0);
+}
+
+int InstructionTextCompiler::find_next_token_index(int type)
+{
+    int i = _token_itp;
+    int nextpos = -1;
+    
+    while(i < _tokens.size() || nextpos > -1)
+    {
+        if (_tokens[i].type == type) {
+            nextpos = i; break;
+        }
+        
+        i++;
+    }
+    
+    return nextpos;
+}
+
 bool InstructionTextCompiler::compile()
 {
     _macros.clear();
@@ -66,6 +94,7 @@ bool InstructionTextCompiler::compile()
         {TOKEN_OPEN, "^\\("},
         {TOKEN_CLOSE, "^\\)"},
         {TOKEN_COMMA, "^\\,"},
+        {TOKEN_ASSIGN, "^\\:"},
         {TOKEN_MACRO_END, "^#end"},
         {TOKEN_MACRO, "^#[a-zA-z0-9]+"},
         {TOKEN_VARIABLE, "^\\$[a-zA-z0-9]+"},
@@ -74,6 +103,24 @@ bool InstructionTextCompiler::compile()
     });
     
     _tokens = lexer.tokenize(_text);
+    
+    // handle the macros first
+    while(_token_itp < _tokens.size())
+    {
+        auto token = _tokens[_token_itp];
+        
+        if (token.type == TOKEN_MACRO)
+        {
+            if (!parse_macro_definition(token)) {
+                _last_error = "Macro definition '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
+                return false;
+            }
+        }
+        
+        _token_itp++;
+    }
+    
+    _token_itp = 0;
     
     std::vector<std::string> label_strings;
     
@@ -129,7 +176,7 @@ bool InstructionTextCompiler::compile()
                 break;
             case TOKEN_MACRO:
                 
-                if (!parse_macro(token)) {
+                if (!parse_macro_call(token)) {
                     _last_error = "Macro '" + token.content + "' failed at line " + std::to_string(token.line + 1) + " error: " + _last_error;
                     return false;
                 }
@@ -173,13 +220,32 @@ bool InstructionTextCompiler::compile()
     return true;
 }
 
-bool InstructionTextCompiler::parse_macro(Token token)
+bool InstructionTextCompiler::is_at_macro_definition(Token token)
 {
     auto name = token.content;
     
-    // new macro definition?
-    if (_macros.find(name) == _macros.end())
+    if (token.type != TOKEN_MACRO || token_at(_token_itp + 1).type != TOKEN_OPEN) {
+        _last_error = "Borken marco '" + token.content + "' at line " + std::to_string(token.line + 1);
+        return false;
+    }
+    
+    int closepos = find_next_token_index(TOKEN_CLOSE);
+    if (closepos == -1) {
+        _last_error = "Borken marco, no closing scope '" + token.content + "' at line " + std::to_string(token.line + 1);
+        return false;
+    }
+    
+    // check if the token after the scope close is an assignment
+    // indicating that this is a macro definition and not a call
+    return token_at(closepos + 1).type == TOKEN_ASSIGN;
+}
+
+bool InstructionTextCompiler::parse_macro_definition(Token token)
+{
+    if (is_at_macro_definition(token))
     {
+        auto name = token.content;
+        
         int i = _token_itp;
         int endpos = -1;
         
@@ -203,15 +269,61 @@ bool InstructionTextCompiler::parse_macro(Token token)
         }
         
         // remove the macro tokens from the main set
-        _tokens.erase(_tokens.begin(), _tokens.end());
-        //_tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + macro_tokens.size());
+        _tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + macro_tokens.size());
+        _token_itp--;
         
-    }
-    // macro call
-    else
-    {
+        // remove the macro name and end
+        macro_tokens.erase(macro_tokens.begin(), macro_tokens.begin() + 1);
+        macro_tokens.erase(macro_tokens.end() - 1, macro_tokens.end());
         
+        // add the macro tokens
+        _macros.insert(std::pair<std::string, TokenMacro>(name, TokenMacro({}, macro_tokens)));
     }
     
     return true;
+}
+
+bool InstructionTextCompiler::parse_macro_call(Token token)
+{
+    if (is_at_macro_definition(token)) {
+        _last_error = "Unexpected macro definition at line " + std::to_string(token.line + 1);
+        return false;
+    }
+    
+    if (_macros.find(token.content) == _macros.end()) {
+        _last_error = "Unknown macro " + token.content + " at line " + std::to_string(token.line + 1);
+        return false;
+    }
+    
+    return true;
+}
+
+TokenCollectionReturn InstructionTextCompiler::parse_scope()
+{
+    int i = _token_itp;
+    int endpos = -1;
+    
+    TokenCollection scope_tokens;
+    
+    while(i < _tokens.size() || endpos > -1)
+    {
+        scope_tokens.push_back(_tokens[i]);
+        
+        if (_tokens[i].type == TOKEN_CLOSE) {
+            endpos = i; break;
+        }
+        
+        i++;
+    }
+    
+    // no end node?
+    if (endpos == -1) {
+        _last_error = "Did you forgot to close a macro definition? Because we can't find the end.";
+        return TokenCollectionReturn(false, {});
+    }
+    
+    // remove the macro tokens from the main set
+    _tokens.erase(_tokens.begin() + _token_itp, _tokens.begin() + _token_itp + scope_tokens.size());
+    
+    return TokenCollectionReturn(true, scope_tokens);
 }

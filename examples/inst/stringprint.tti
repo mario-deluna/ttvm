@@ -1,7 +1,23 @@
 @done 
+	#hello()
 	.HALT
 
-#store($address, $value)
+#hello():
+	.CINT         0x48 .PRINT
+	.CINT         0x61 .PRINT
+	.CINT         0x6C .PRINT
+	.CINT         0x6C .PRINT
+	.CINT         0x6F .PRINT
+	.CINT         0x20 .PRINT
+	.CINT         0x42 .PRINT
+	.CINT         0x72 .PRINT
+	.CINT         0x75 .PRINT
+	.CINT         0x64 .PRINT
+	.CINT         0x69 .PRINT
+	.CINT         0x0A .PRINT
+#end
+
+#store($address, $value):
 	.CINT 0xFF
 #end
 
