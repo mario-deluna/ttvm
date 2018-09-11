@@ -23,7 +23,12 @@ list(REMOVE_ITEM TTVM_SRC ${TTVM_MAIN})
 
 add_executable(${PROJECT_NAME} ${TTVM_MAIN} ${TTVM_SRC})
 
+# SDL
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
+
 ###
 # Installation
 ###
-install(TARGETS ${TIBOT_CMD} DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)

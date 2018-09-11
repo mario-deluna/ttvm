@@ -10,12 +10,30 @@
 #include "Log.h"
 
 #include <unistd.h>
+#include <thread>
+
 
 #define TTVMPUSH(v) _stack[++_stack_pointer] = v
 #define TTVMCURR _stack[_stack_pointer]
 #define TTVMPOP _stack[_stack_pointer--]
 #define TTVMNINST _instructions[_instruction_pointer++]
 #define CONTROL_SP assert(_stack_pointer >= 0)
+
+void TTVM::execute_with_display()
+{
+    display = new Display();
+    
+    std::thread pthread(&TTVM::execute, this);
+    
+    display->start();
+    
+    // We come to this point when the user closes the window
+    // kill the display
+    delete display;
+    
+    // wait for the programm to finish
+    pthread.join();
+}
 
 void TTVM::execute()
 {

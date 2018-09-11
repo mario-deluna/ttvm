@@ -9,8 +9,9 @@
 #define VM_hpp
 
 #include "Program.h"
+#include "Display.hpp"
 
-#define TTVM_STACK_SIZE 500
+#define TTVM_STACK_SIZE 512
 #define TTVM_MEMORY_SIZE 16384
 
 class TTVM
@@ -22,6 +23,8 @@ class TTVM
     int _stack_pointer;
     
     int *_memory;
+    
+    Display *display;
     
 public:
     inline TTVM(Program *program)
@@ -39,6 +42,7 @@ public:
     }
     
     void execute();
+    void execute_with_display();
 };
 
 #endif /* VM_hpp */

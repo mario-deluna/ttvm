@@ -36,7 +36,7 @@ void execute(const std::string &filename)
     Program *program = new Program(instructions.data(), entry_point);
     TTVM *vm = new TTVM(program);
     
-    vm->execute();
+    vm->execute_with_display();
     
     delete vm;
     delete program;
