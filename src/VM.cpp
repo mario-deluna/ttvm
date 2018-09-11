@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <thread>
 
-
 #define TTVMPUSH(v) _stack[++_stack_pointer] = v
 #define TTVMCURR _stack[_stack_pointer]
 #define TTVMPOP _stack[_stack_pointer--]
@@ -25,7 +24,7 @@ void TTVM::execute_with_display()
     
     std::thread pthread(&TTVM::execute, this);
     
-    display->start();
+    display->start(&dispm);
     
     // We come to this point when the user closes the window
     // kill the display
@@ -117,6 +116,17 @@ void TTVM::execute()
             case TTVMI_LOAD:
                 i1 = TTVMPOP; // address
                 TTVMPUSH(_memory[i1]);
+            break;
+                
+            /**
+             * Loads a value
+             */
+            case TTVM_DISP_PX:
+                i1 = TTVMPOP; // color
+                i2 = TTVMPOP; // index
+                dispm.lock();
+                display->pixel_buffer[i2] = i1;
+                dispm.unlock();
             break;
                 
             /**

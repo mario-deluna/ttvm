@@ -174,6 +174,8 @@ bool InstructionTextCompiler::compile()
                     add_instruction(TTVMI_STORE);
                 } else if (token.content == ".LOAD") {
                     add_instruction(TTVMI_LOAD);
+                } else if (token.content == ".DISP_PX") {
+                    add_instruction(TTVM_DISP_PX);
                 } else {
                     _last_error = "Invalid instruction given '" + token.content + "' at line " + std::to_string(token.line + 1);
                     return false;

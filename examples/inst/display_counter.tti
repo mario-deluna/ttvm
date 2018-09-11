@@ -1,0 +1,10 @@
+@main
+  .CINT         0
+@add
+  .CINT         1
+  .ADD_INT
+  .DUP          .PRINTI             // print the added value
+  .CINT         0x0A .PRINT         // print a linebreak
+  .DUP .DUP     .DISP_PX      		// Add a red pixel at counter index
+  .CINT         10000 .USLEEP       // wait for a second
+  .JUMP         @add                // repeat

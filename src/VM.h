@@ -11,6 +11,8 @@
 #include "Program.h"
 #include "Display.hpp"
 
+#include <mutex>
+
 #define TTVM_STACK_SIZE 512
 #define TTVM_MEMORY_SIZE 16384
 
@@ -25,6 +27,7 @@ class TTVM
     int *_memory;
     
     Display *display;
+    std::mutex dispm;
     
 public:
     inline TTVM(Program *program)

@@ -9,6 +9,7 @@
 #define Display_hpp
 
 #include <SDL.h>
+#include <mutex>
 
 #define DISPLAY_WIDHT 800
 #define DISPLAY_HEIGHT 600
@@ -21,16 +22,13 @@ class Display
     SDL_Renderer *renderer;
     SDL_Texture *buffer;
     
-    void* buffer_data = NULL;
-    int buffer_pitch = 0;
-    
 public:
     Uint32 *pixel_buffer = new Uint32[DISPLAY_PIXEL_HEIGHT * DISPLAY_PIXEL_WIDTH];
     
     Display();
     ~Display();
     
-    void start();
+    void start(std::mutex *dispm);
 };
 
 #endif /* Display_hpp */

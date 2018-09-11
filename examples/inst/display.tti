@@ -1,0 +1,14 @@
+#pixel($index, $color):
+	.CINT $index .CINT $color .DISP_PX
+#end
+
+@main
+	.CINT 0xFF0000 .PRINTI
+	.CINT 0x00FF00 .PRINTI
+	.CINT 0x0000FF .PRINTI
+
+	#pixel(0, 0xFF0000)
+	#pixel(79, 0xFF0000)
+	#pixel(4720, 0xFF0000)
+	#pixel(4799, 0xFF0000)
+	.HALT

@@ -18,43 +18,28 @@ Display::Display()
     SDL_SetWindowInputFocus(window);
     SDL_RaiseWindow(window);
     
-    buffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRA8888, SDL_TEXTUREACCESS_STATIC, DISPLAY_PIXEL_WIDTH, DISPLAY_PIXEL_HEIGHT);
+    buffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, DISPLAY_PIXEL_WIDTH, DISPLAY_PIXEL_HEIGHT);
+    
+    // inital fill white
+    memset(pixel_buffer, 255, DISPLAY_PIXEL_WIDTH * DISPLAY_PIXEL_HEIGHT * sizeof(Uint32));
 }
 
 Display::~Display()
 {
     SDL_DestroyTexture(buffer);
-    buffer_data = NULL;
+    delete[] pixel_buffer;
     
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
 
-void Display::start()
+void Display::start(std::mutex *dispm)
 {
     SDL_Event event;
     
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-   
-    SDL_LockTexture(buffer, NULL, &buffer_data, &buffer_pitch);
-    
-    Uint32 format = SDL_GetWindowPixelFormat(window);
-    SDL_PixelFormat* mappingFormat = SDL_AllocFormat(format);
-    
-    //Uint32* pixels = (Uint32*)buffer_data;
-    //int pixelCount = (buffer_pitch / 4) * DISPLAY_PIXEL_HEIGHT;
-    
-    int i = 0;
-//
-//    pixels[0] = SDL_MapRGB(mappingFormat, 0xff, 0xFF, 0xFF);
-//    pixels[2] = SDL_MapRGB(mappingFormat, 0xff, 0xFF, 0xFF);
-//    pixels[344] = SDL_MapRGB(mappingFormat, 0xff, 0xFF, 0xFF);
-//    pixels[3453] = SDL_MapRGB(mappingFormat, 0xff, 0xFF, 0xFF);
-    
-    SDL_UnlockTexture(buffer);
-    //SDL_FreeFormat(mappingFormat);
     
     while (1)
     {
@@ -65,20 +50,18 @@ void Display::start()
             }
         }
         
-        SDL_LockTexture(buffer, NULL, &buffer_data, &buffer_pitch);
-        Uint32 *pixels = (Uint32*)buffer_data;
+//        pixel_buffer[i] = 0xff0000;
+//        pixel_buffer[i+1] = 0x00ff00;
+//        pixel_buffer[i+2] = 0x0000ff;
+        //pixel_buffer[i+3] = 0x000000ff;
         
-        pixel_buffer[i] = SDL_MapRGB(mappingFormat, 0xff, 0xFF, 0xFF);
-        
-        // apply the pixel buffer
-        pixels = pixel_buffer;
-        
-        SDL_UnlockTexture(buffer);
+        dispm->lock();
+        SDL_UpdateTexture(buffer, NULL, pixel_buffer, DISPLAY_PIXEL_WIDTH * sizeof(Uint32));
+        dispm->unlock();
         
         SDL_RenderCopy(renderer, buffer, NULL, NULL);
         SDL_RenderPresent(renderer);
         
         SDL_Delay(1000 / 60);
-        i++;
     }
 }
